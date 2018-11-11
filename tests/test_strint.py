@@ -1,11 +1,11 @@
 import pytest
 
-from strint import strint, Chunk, Multiplier
+from strint import strint, Chunk, PowerOfTen
 
 
 def test_readme_example_1():
     assert strint("two octillion gigadollars and twelve cents") == {
-        "dollars": 2000000000000000000000000000000000000,
+        "dollars": 2 * (10 ** 27) * (10 ** 9),
         "cents": 12,
     }
 
@@ -26,11 +26,7 @@ def test_chunk_repr():
 
 
 def test_multiplier_repr():
-    assert repr(Multiplier(15)) == "Multiplier(15)"
-
-
-def test_float():
-    assert strint("6.5 decamillion minutes") == {"minutes": 65000000}
+    assert repr(PowerOfTen(15)) == "PowerOfTen(15)"
 
 
 def test_prefix_only():
@@ -44,14 +40,14 @@ def test_reject_prefixed_non_exponent_word():
 
 def test_prefixed_exponent_words():
     assert strint("twelve gigamillion ties and one megagigatrillion and one hats") == {
-        "ties": 12000000000000000,
-        "hats": 1000000000000000000000000001,
+        "ties": 12 * (10 ** 9) * (10 ** 6),
+        "hats": (10 ** 6) * (10 ** 9) * (10 ** 12) + 1,
     }
 
 
 def test_multiword_units():
     assert strint("99 megamillion bottles of beer on the wall") == {
-        "bottles of beer on the wall": 99000000000000
+        "bottles of beer on the wall": 99 * (10 ** 6) * (10 ** 6)
     }
 
 
@@ -65,7 +61,7 @@ def test_multiple_with_same_unit():
 
 
 def test_hyphen_in_weird_places():
-    assert strint("one-million") == 1000000
+    assert strint("one-million") == 1_000_000
 
 
 def test_hyphen_in_other_weird_places():
@@ -74,15 +70,15 @@ def test_hyphen_in_other_weird_places():
 
 
 def test_prefix_with_hyphen():
-    assert strint("giga-million") == 1000000000000000
+    assert strint("giga-million") == (10 ** 9) * (10 ** 6)
 
 
 def test_hyphen_thing_consisting_of_two_prefixes():
-    assert strint("tera-mega") == 1000000000000000000
+    assert strint("tera-mega") == (10 ** 12) * (10 ** 6)
 
 
 def test_prefixed_unit_with_hyphen():
-    assert strint("mega-fun") == {"fun": 1000000}
+    assert strint("mega-fun") == {"fun": 1_000_000}
 
 
 def test_prefixed_number_with_hyphen():
@@ -96,7 +92,7 @@ def test_some_string_thing():
 
 def test_hyphenated_words_with_no_numeric_significance():
     assert strint("five test-cases") == {"test-cases": 5}
-    assert strint("a million bad bug-reports") == {"bad bug-reports": 1000000}
+    assert strint("a million bad bug-reports") == {"bad bug-reports": 1_000_000}
 
 
 def test_and_after_parsed_token():
@@ -105,3 +101,7 @@ def test_and_after_parsed_token():
 
 def test_and_in_unit_name():
     assert strint("forty evil and roids") == {"evil and roids": 40}
+
+
+def test_bigger_part_followed_by_smaller_and_then_bigger_again():
+    assert strint("two hundred and ninety-one thousand") == 291_000
