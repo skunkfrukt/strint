@@ -1,5 +1,7 @@
 import re
 
+VERSION = "0.0.1"
+
 
 class Chunk:
     def __init__(self, mantissa=1, multipliers=None):
