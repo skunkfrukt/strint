@@ -22,7 +22,7 @@ def test_readme_example_3():
 
 
 def test_chunk_repr():
-    assert repr(Chunk(1, [10])) == "Chunk(10)"
+    assert repr(Chunk(1, PowerOfTen(10))) == "Chunk(1, 10)"
 
 
 def test_multiplier_repr():

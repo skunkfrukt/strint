@@ -274,7 +274,7 @@ def strint(numstring):
             lp,
         )
         if prefixed_match:
-            total_prefix_multiplier = PowerOfTen(1)
+            total_prefix_multiplier = PowerOfTen(0)
             for prefix in re.findall(
                 "|".join(prefixes.keys()), prefixed_match.group("prefixes")
             ):
@@ -354,7 +354,12 @@ def strint(numstring):
     if current_chunk:
         if not current_chunk.power:
             current_chunk.power = PowerOfTen(0)
+        if prefix_multiplier:
+            current_chunk.power *= prefix_multiplier
+            prefix_multiplier = None
         second_pass.append(current_chunk)
+    if prefix_multiplier:
+        second_pass.append(Chunk(None, prefix_multiplier))
 
     print(f"* Second pass: {second_pass}")
 
