@@ -100,33 +100,31 @@ def strint(numstring):
     parts = re.findall(
         r"\d+(?:\.\d+)?|[,;]|[a-z]+(?:-[a-z]+)?", numstring, re.IGNORECASE
     )
-    first_pass = []
-    currently_dealing_with_literal_strings = False
+    first_pass = [None]
+
+    def previous_token_is_string() -> bool:
+        return first_pass and isinstance(first_pass[-1], str)
+
     for part in parts:
         lp = part.lower()
         if lp in (",", ";"):
             continue
-        elif lp == "and":
-            if currently_dealing_with_literal_strings and isinstance(
-                first_pass[-1], str
-            ):
-                first_pass[-1] += " " + part
-            continue
+        if lp == "and":
+            if previous_token_is_string():
+                first_pass[-1] += f" {part}"
+                continue
         try:
             first_pass.append(int(part))
-            currently_dealing_with_literal_strings = False
             continue
         except ValueError:
             pass
         try:
             first_pass.append(float(part))
-            currently_dealing_with_literal_strings = False
             continue
         except ValueError:
             pass
         if lp in words:
             first_pass.append(words[lp])
-            currently_dealing_with_literal_strings = False
             continue
         elif lp in prefixes:
             first_pass.append(prefixes[lp])
@@ -140,13 +138,11 @@ def strint(numstring):
                 if isinstance(prefix, int) and isinstance(suffix, int):
                     if prefix in (20, 30, 40, 50, 60, 70, 80, 90) and suffix < 10:
                         first_pass.append(prefix + suffix)
-                        currently_dealing_with_literal_strings = False
                         continue
                     raise ValueError(f"Unable to parse '{part}'.")
                 else:
                     first_pass.append(prefix)
                     first_pass.append(suffix)
-                    currently_dealing_with_literal_strings = False
                     continue
             elif raw_prefix in prefixes:
                 prefix = prefixes[raw_prefix]
@@ -155,60 +151,47 @@ def strint(numstring):
                     if isinstance(suffix, Multiplier):
                         first_pass.append(suffix)
                         first_pass.append(prefix)
-                        currently_dealing_with_literal_strings = False
                         continue
                     raise ValueError(f"Unable to parse '{part}'.")
                 elif raw_suffix in prefixes:
                     first_pass.append(prefixes[raw_suffix])
                     first_pass.append(prefix)
-                    currently_dealing_with_literal_strings = False
                     continue
                 first_pass.append(prefix)
-                if currently_dealing_with_literal_strings:
-                    first_pass[-1] += " " + raw_suffix
-                else:
-                    first_pass.append(raw_suffix)
-                currently_dealing_with_literal_strings = True
+                first_pass.append(raw_suffix)
                 continue
-            if currently_dealing_with_literal_strings:
+            if previous_token_is_string():
                 first_pass[-1] += " " + part
             else:
                 first_pass.append(part)
-            currently_dealing_with_literal_strings = True
             continue
         prefixed_match = re.match(
-            r"(?P<prefixes>(?:" + "|".join(prefixes.keys()) + r")*)(?P<unit>\w+)", lp
+            r"(?P<prefixes>(?:" + "|".join(prefixes.keys()) + r")+)(?P<unit>\w+)", lp
         )
         if prefixed_match:
-            if prefixed_match.group("prefixes"):
-                for prefix in re.findall(
-                    "|".join(prefixes.keys()), prefixed_match.group("prefixes")
-                ):
-                    first_pass.append(prefixes[prefix])
-                    currently_dealing_with_literal_strings = False
+            for prefix in re.findall(
+                "|".join(prefixes.keys()), prefixed_match.group("prefixes")
+            ):
+                first_pass.append(prefixes[prefix])
             raw_unit = prefixed_match.group("unit")
             if raw_unit in words:
                 unit = words[raw_unit]
                 if isinstance(unit, Multiplier):
                     first_pass.append(unit)
-                    currently_dealing_with_literal_strings = False
                     continue
                 raise ValueError(f"Unable to parse '{part}'.")
-            if currently_dealing_with_literal_strings:
-                first_pass[-1] += " " + raw_unit
-            else:
-                first_pass.append(raw_unit)
-            currently_dealing_with_literal_strings = True
+            first_pass.append(raw_unit)
             continue
-        if currently_dealing_with_literal_strings:
+        if previous_token_is_string():
             first_pass[-1] += " " + part
         else:
             first_pass.append(part)
-        currently_dealing_with_literal_strings = True
 
     second_pass = []
     chunk = None
-    for part in first_pass:
+    for part in first_pass[1:]:
+        if part == "and":
+            continue
         if isinstance(part, (int, float)):
             if chunk is None:
                 chunk = Chunk(mantissa=part)
@@ -227,9 +210,11 @@ def strint(numstring):
         if chunk:
             second_pass.append(chunk)
             chunk = None
-        if isinstance(part, str):
-            if part.lower().endswith(" and"):
-                part = part[:-4]
+
+        # Really strange if something other than a string ends up here.
+        assert isinstance(part, str)
+        if part.lower().endswith(" and"):
+            part = part[:-4]
         second_pass.append(part)
 
     if chunk:

@@ -25,7 +25,7 @@ def test_chunk_repr():
     assert repr(Chunk(1, [10])) == "Chunk(10)"
 
 
-def test_exponent_repr():
+def test_multiplier_repr():
     assert repr(Multiplier(15)) == "Multiplier(15)"
 
 
@@ -92,3 +92,16 @@ def test_prefixed_number_with_hyphen():
 
 def test_some_string_thing():
     assert strint("which one of these three") == {None: 3, "of these": 1}
+
+
+def test_hyphenated_words_with_no_numeric_significance():
+    assert strint("five test-cases") == {"test-cases": 5}
+    assert strint("a million bad bug-reports") == {"bad bug-reports": 1000000}
+
+
+def test_and_after_parsed_token():
+    assert strint("five and ten") == 15
+
+
+def test_and_in_unit_name():
+    assert strint("forty evil and roids") == {"evil and roids": 40}

@@ -1,0 +1,14 @@
+[run]
+branch = True
+source =
+	strint/
+	tests/
+omit =
+	*/__main__.py
+
+[report]
+exclude_lines =
+	if (?:0|False):
+	if __name__ == ["']__main__['"]:
+show_missing = True
+fail_under = 100
