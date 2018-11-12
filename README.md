@@ -1,4 +1,6 @@
 # strint
+[![Build Status](https://travis-ci.org/skunkfrukt/strint.svg?branch=master)](https://travis-ci.org/skunkfrukt/strint)
+
 A parser for numbers written as strings.
 
 ```python
